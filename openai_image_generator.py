@@ -8,8 +8,29 @@ from tkinter import filedialog
 from PIL import Image, ImageTk
 import requests
 
+"""
+OpenAI DALL-E Image Generator
+
+This script allows you to generate images using OpenAI's DALL-E models (DALL-E 2 and DALL-E 3)
+through a simple command-line interface. It supports various image sizes and multiple image generation.
+
+The generated images are saved to a local directory. An OpenAI API key is required.
+"""
+
 def generate_image(prompt, model="dall-e-3", size="1024x1024", quality="standard", n=1):
-    """OpenAI Image Generation using Prompt + get Object + mask."""
+    """
+    Generate images using OpenAI's DALL-E API.
+    
+    Args:
+        prompt (str): Text description of the image to generate
+        model (str): The model to use: 'dall-e-2' or 'dall-e-3'
+        size (str): Image size, e.g., '1024x1024', '1792x1024', etc.
+        quality (str): Image quality, 'standard' or 'hd' (for DALL-E 3)
+        n (int): Number of images to generate (1-10)
+        
+    Returns:
+        tuple: (response_json, url, data_json, headers, cwd, headers_json) if successful, None otherwise
+    """
     try:
         url = "https://api.openai.com/v1/images/generations"
         headers = {
@@ -24,18 +45,36 @@ def generate_image(prompt, model="dall-e-3", size="1024x1024", quality="standard
             "quality": quality
         }
         
-        response = requests.post(url, headers=headers, json=data)
+        # Add timeout to prevent hanging on network issues
+        response = requests.post(url, headers=headers, json=data, timeout=30)
         if response.status_code == 200:
             return response.json(), url, json.dumps(data), headers, os.getcwd(), json.dumps(headers)
         else:
-            print(f"Error: {response.status_code}, {response.text}")
+            print(f"Error from OpenAI API: {response.status_code}")
+            print(f"Response: {response.text}")
             return None
+    except requests.exceptions.Timeout:
+        print("Request timed out. Please check your internet connection and try again.")
+        return None
+    except requests.exceptions.RequestException as e:
+        print(f"Request error: {e}")
+        return None
     except Exception as e:
         print(f"Error: {e}")
         return None
 
 def save_images(response_data, size, folder_name="openai_images"):
-    """Save images to disk."""
+    """
+    Save images from API response to disk.
+    
+    Args:
+        response_data (dict): The JSON response from the OpenAI API
+        size (str): The size of the images (for filename)
+        folder_name (str): Directory name to save images in
+        
+    Returns:
+        list: Paths to saved image files
+    """
     saved_files = []
     
     try:
@@ -48,7 +87,7 @@ def save_images(response_data, size, folder_name="openai_images"):
         for i, image_data in enumerate(response_data["data"]):
             # For API responses with direct URLs
             if "url" in image_data:
-                response = requests.get(image_data["url"])
+                response = requests.get(image_data["url"], timeout=30)
                 img = Image.open(io.BytesIO(response.content))
                 
                 # Save the image
@@ -68,11 +107,14 @@ def save_images(response_data, size, folder_name="openai_images"):
     
         return saved_files
     except Exception as e:
-        print(f"Error: {e}")
+        print(f"Error saving images: {e}")
         return []
 
 def select():
-    """Function for testing images."""
+    """
+    Function for selecting images (placeholder for future functionality).
+    Currently not implemented.
+    """
     return []
 
 # Load environment variables from .env file

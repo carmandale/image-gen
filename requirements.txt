@@ -1,0 +1,10 @@
+# Core dependencies for OpenAI Image Generator
+
+# For loading environment variables from .env file
+python-dotenv
+
+# For making HTTP requests to OpenAI API
+requests
+
+# For image processing and manipulation
+pillow
